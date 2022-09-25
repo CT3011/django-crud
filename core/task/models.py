@@ -1,4 +1,7 @@
+from symbol import import_as_name
 from django.db import models
+from django.db.models import TextChoices 
+from django.utils.translation import gettext_lazy as _
 
 from django.template.defaultfilters import slugify
 
@@ -11,7 +14,14 @@ class Category(models.Model):
         return self.name
     
 class Task(models.Model):
+
+    class Options(TextChoices):
+        SPECIFIC = 'spacific', _('spacific')
+        ALL = 'all', _('all')
+        DEP = 'dep', _('dep')
+
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
+    subcategory = models.CharField(max_length=10, choices=Options.choices, default='all')
     name = models.CharField(max_length=150)
     description = models.TextField(max_length=4000, null=True, blank=True)
     slug = models.SlugField(max_length=150, null=True, blank=True)

@@ -10,6 +10,6 @@ class CategoryForm(forms.ModelForm):
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ['category', 'name', 'description']
+        fields = ['category', 'subcategory', 'name', 'description']
         
   

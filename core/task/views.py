@@ -1,10 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, reverse
 from django.views.generic import ListView, UpdateView, CreateView, DeleteView
 from django.db.models import Q #Required
+from django.views import View
+from django.core.exceptions import ObjectDoesNotExist
 
 from .forms import CategoryForm, TaskForm
 from .models import Category, Task
-from datetime import datetime
+from datetime import date, datetime
 from time import mktime, time, localtime
 # Create your views here.
 
@@ -42,15 +44,24 @@ class getById(ListView):
     def get_queryset(self, *args, **kwargs):
         return Task.objects.filter(id=self.kwargs.get('id'))
 
+# _______________________________________
 class createTask(CreateView):
-    model = Task
     form_class = TaskForm 
-    template_name= 'task/create.html'
+    template_name = 'task/create.html'
     success_url = '/'
 
+    print(">>>>>>>>>>>>>>>>>>>>Class instance")
+
     def form_valid(self, form):
+        print("Data......................", form.instance.name)
         form.instance.created_by = self.request.user
-        return super(createTask, self).form_valid(form)
+        try:
+            Task.objects.get(category=form.instance.category, subcategory=form.instance.subcategory)
+            response = {'error': "Already exist task with same category and subcategory"}
+            print(response)
+            return render(self.request, 'task/index.html',response)
+        except:
+            return super(createTask, self).form_valid(form)
         
 
 class UpdateTask(UpdateView):
@@ -70,5 +81,66 @@ class DeleteView(DeleteView):
     template_name = 'task/index.html'
     success_url = '/'
 
+
+class CreateTaskValidationView(View):
+    form_class = TaskForm 
+    template_name = 'task/create.html'
     
+
+    def get(self, request, *args, **kwargs):
+        form = self.form_class
+        return render(request, "task/create.html", {'form': form})
     
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            
+            #____________saperate______________
+            # try:
+            #     Task.objects.get(category=form.instance.category, subcategory=form.instance.subcategory)
+            #     response = {'error': "Already exist task with same category and subcategory"}
+            #     print(response)
+            #     return redirect(reverse('home'))
+            # except:
+            #     form.save()
+            #     return redirect(request, self.template_name, {'form': form})
+            # except ObjectDoesNotExist:
+            #     form.save()
+            # return redirect(reverse('home'))
+
+            
+           #_____________other one_________________
+            # data = list(Task.objects.all().values_list('category', 'subcategory'))
+            # print(data, "#####>")
+            form.instance.created_by = self.request.user
+            # category =  form.instance.category
+            # print(category, "_________ >>")
+            # subcategory = form.instance.subcategory
+            # print(subcategory, "----------------->>") 
+            # instance = [('category', 'subcategory')]
+            # print(instance, "*********---->>") 
+            # if instance in date:
+            try: 
+                Task.objects.get(category=form.instance.category, subcategory=form.instance.subcategory)
+                return render(request, self.template_name, {'form': form})
+            except:
+                form.save()
+                return redirect(reverse('home'))
+        else:
+            return render(request, self.template_name, {'form': form})
+
+#__________other second_______________
+    # def form_valid(self, form):
+    #     print("Data......................", form.instance.name)
+    #     form.instance.created_by = self.request.user
+    #     print(form.instance.category, "_____asdasd")
+    #     print(form.instance.subcategory, "__________sdasd" )
+    #     if form.instance.category and form.instance.subcategory in date:
+    #         print(form.instance.category, "_____asdasd")
+    #         print(form.instance.subcategory, "__________sdasd" )
+    #         return render('task/index.html')
+    #     else:
+    #         return super(CreateTaskValidationView, self).form_valid(form)
+            
+
